@@ -63,41 +63,50 @@ Manually searching for jobs on multiple platforms (LinkedIn, BrighterMonday, com
 
 ### Quick Start
 
-# Clone the repository
-git clone https://github.com/yourusername/jobhunter-tool.git
-cd jobhunter-tool
+## Clone the repository
 
-# Install dependencies
-go mod download
-go mod tidy
+		git clone https://github.com/C9b3rD3vi1/jobhunter-tool.git
+		cd jobhunter-tool
 
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your configuration
+## Install dependencies
+		go mod download
+		go mod tidy
 
-# Run the application
-go run main.go
+## Set up environment variables
 
-Access the application:
-Open http://localhost:3000 in your browser.
+		cp .env.example .env
 
-Environment Configuration
+## Edit .env with your configuration
 
-Create a .env file in the root directory:
+## Run the application
 
-# Server Configuration
-PORT=3000
-ENVIRONMENT=development
+		go run main.go
 
-# OpenAI API (Optional - for AI features)
-OPENAI_API_KEY=your_openai_api_key_here
+## Access the application:
 
-# Database
-DATABASE_PATH=./jobhunter.db
+**Open http://localhost:3000 in your browser.**
 
-# Scraping Configuration
-SCRAPING_DELAY=4
-SCRAPING_TIMEOUT=30
+## Environment Configuration
+
+***Create a .env file in the root directory:***
+
+## Server Configuration
+
+		PORT=3000
+		ENVIRONMENT=development
+
+## OpenAI API (Optional - for AI features)
+
+		OPENAI_API_KEY=your_openai_api_key_here
+
+## Database Configuration
+
+		DATABASE_PATH=./jobhunter.db
+
+## Scraping Configuration
+
+		SCRAPING_DELAY=4
+		SCRAPING_TIMEOUT=30
 
 
 ## 🏗️ Project Structure
@@ -136,8 +145,10 @@ jobhunter-tool/
     │   └── custom.css
     └── js/
         └── main.js
-      ```  
-        
+     
+```
+
+
 ## Usage Guide
 Dashboard (/)
 
@@ -224,7 +235,8 @@ Example request:
   "company": "Safaricom",
   "job_description": "Looking for SOC analyst with Fortinet experience...",
   "user_profile": "Cybersecurity professional with 3 years experience..."
-}```
+}
+```
 
 
 
