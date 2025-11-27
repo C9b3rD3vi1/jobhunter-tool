@@ -7,9 +7,9 @@ import (
     "strings"
 
     "github.com/gofiber/fiber/v2"
-    "jobhunter-tool/ai"
-    "jobhunter-tool/models"
-    "jobhunter-tool/scraper"
+    "github.com/C9b3rD3vi1/jobhunter-tool/ai"
+    "github.com/C9b3rD3vi1/jobhunter-tool/models"
+    "github.com/C9b3rD3vi1/jobhunter-tool/scraper"
 )
 
 func IndexHandler(c *fiber.Ctx) error {

@@ -11,9 +11,9 @@ import (
     "github.com/joho/godotenv"
     "github.com/robfig/cron/v3"
     
-    "jobhunter-tool/handlers"
-    "jobhunter-tool/models"
-    "jobhunter-tool/scraper"
+    "github.com/C9b3rD3vi1/jobhunter-tool/handlers"
+    "github.com/C9b3rD3vi1/jobhunter-tool/models"
+    "github.com/C9b3rD3vi1/jobhunter-tool/scraper"
 )
 
 func main() {
