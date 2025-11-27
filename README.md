@@ -148,7 +148,9 @@ jobhunter-tool/
 
 
 ## Usage Guide
-### Dashboard (/)
+
+
+### ***Dashboard (/)***
 
 ![Screenshot](./static/images/dashboard.png)
 
@@ -159,7 +161,7 @@ Quick Actions: One-click scraping, analysis, tracking
 High-Probability Opportunities: Top-scoring jobs based on your skills
 
 
-### Job Board (/jobs)
+### ***Job Board (/jobs)***
 
 Smart Filtering: Filter by score, skills, company, location
 
@@ -169,14 +171,14 @@ Real-time Scoring with color coding
 
 
 
-### Application Tracker (/tracker)
+### ***Application Tracker (/tracker)***
 
 Status Tracking: Applied, Interviewing, Offer, Rejected
 
 CRM Features: Add notes, hiring manager contacts, follow-up dates
 
 
-### Skills Analyzer (/analyzer)
+### ***Skills Analyzer (/analyzer)***
 
 Skills Gap Analysis
 
@@ -185,7 +187,8 @@ AI Recommendations
 Transferable Skills highlighting
 
 
-### Company Pages (/company/:name)
+
+### ***Company Pages (/company/:name)***
 
 Company-focused view for all opportunities
 
@@ -194,7 +197,7 @@ Consistent scoring
 
 ### Quick comparison within the same company
 
-### API Endpoints
+#### API Endpoints
 
 ***Job Management***
 ```text
@@ -221,6 +224,7 @@ POST	/tracker/add	        Add manual application
 PUT	    /tracker/:id/status	    Update application status
 DELETE	/tracker/:id	        Delete application
 ```
+
 
 ## AI Integration
 Cover Letter Generation
@@ -259,6 +263,8 @@ BrighterMonday Kenya
 Fuzu Kenya
 
 Company Career Pages: Safaricom, KCB Bank, Equity Bank
+
+
 
 #### Scraping Features
 
