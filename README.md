@@ -62,7 +62,7 @@ Manually searching for jobs on multiple platforms (LinkedIn, BrighterMonday, com
 - (Optional) OpenAI API key for AI features  
 
 ### Quick Start
-```bash
+
 # Clone the repository
 git clone https://github.com/yourusername/jobhunter-tool.git
 cd jobhunter-tool
@@ -100,8 +100,8 @@ SCRAPING_DELAY=4
 SCRAPING_TIMEOUT=30
 
 
-🏗️ Project Structure
-
+## 🏗️ Project Structure
+```text
 jobhunter-tool/
 ├── main.go                 # Application entry point
 ├── go.mod                  # Go dependencies
@@ -136,9 +136,9 @@ jobhunter-tool/
     │   └── custom.css
     └── js/
         └── main.js
-
-
-Usage Guide
+      ```  
+        
+## Usage Guide
 Dashboard (/)
 
 ![Screenshot](./static/images/dashboard.png)
@@ -182,11 +182,11 @@ Company-focused view for all opportunities
 Consistent scoring
 
 
-Quick comparison within the same company
+## Quick comparison within the same company
 
- API Endpoints
+### API Endpoints
 
-Job Management
+***Job Management***
 
 Method  	Endpoint	    Description
 GET	     /api/jobs	        Get jobs with pagination
@@ -211,23 +211,24 @@ PUT	    /tracker/:id/status	    Update application status
 DELETE	/tracker/:id	        Delete application
 
 
-AI Integration
+## AI Integration
 Cover Letter Generation
 
 Uses OpenAI GPT models to generate personalized cover letters
 
 Example request:
+```json
 
 {
   "job_title": "SOC Analyst",
   "company": "Safaricom",
   "job_description": "Looking for SOC analyst with Fortinet experience...",
   "user_profile": "Cybersecurity professional with 3 years experience..."
-}
+}```
 
 
 
-Skills Analysis
+## Skills Analysis
 
 Fit Score (1-100) based on skill matching
 
@@ -238,7 +239,7 @@ Transferable Skills highlighting
 Personalized Recommendations
 
 
-🕷️ Web Scraping
+## 🕷️ Web Scraping
 Supported Sources
 
 BrighterMonday Kenya
@@ -258,10 +259,11 @@ Duplicate prevention via URL deduplication
 Background processing
 
 
-Data Models
+### Data Models
 
-Job 
+***Job ***
 
+```go
 type Job struct {
     ID          string    `gorm:"primaryKey"`
     Title       string    `gorm:"not null"`
@@ -278,9 +280,11 @@ type Job struct {
     TechStack   []string  `gorm:"serializer:json"`
     CreatedAt   time.Time `gorm:"autoCreateTime"`
 }
+````
 
-Application
+***Application***
 
+```go
 type Application struct {
     ID            string    `gorm:"primaryKey"`
     JobID         string    
@@ -292,9 +296,9 @@ type Application struct {
     Notes         string    
     CreatedAt     time.Time `gorm:"autoCreateTime"`
 }
+```
 
-
-Scoring Algorithm
+## Scoring Algorithm
 
 Skill Matching (60 points)
 
@@ -304,19 +308,25 @@ Salary Indication (10 points)
 
 Company Reputation (10 points)
 
-Deployment
+## Deployment
 
-Docker Deployment
-		docker build -t jobhunter-tool .
-		docker run -p 3000:3000 -v $(pwd)/data:/app/data jobhunter-tool
+### Docker Deployment
 
-Manual Deployment
+```bash
+docker build -t jobhunter-tool .
+docker run -p 3000:3000 -v $(pwd)/data:/app/data jobhunter-tool
 
-		go build -o jobhunter-tool main.go
-		./jobhunter-tool
-		
+```
+
+### Manual Deployment
+
+```bash
+go build -o jobhunter-tool main.go
+./jobhunter-tool
+
+```
 				
-Production Considerations:
+### Production Considerations:
 
 Set ENVIRONMENT=production in .env
 
@@ -327,7 +337,7 @@ Configure database backups
 Enable logging and monitoring
 
 
-🔒 Security Features
+### 🔒 Security Features
 
 Input validation
 
@@ -340,7 +350,7 @@ Rate limiting in scraping engine
 Proper CORS configuration
 
 
-🐛 Troubleshooting
+## 🐛 Troubleshooting
 
 Scraping issues: Check internet, delays, site accessibility
 
@@ -348,12 +358,13 @@ Database issues: Permissions, path, SQLite3 installed
 
 AI issues: OpenAI API key, quota, logs
 
-Logs:
+## Logs:
 
+```bash
 tail -f jobhunter.log
+```
 
-
-Contributing
+## Contributing
 
 Fork the repository
 
@@ -364,7 +375,7 @@ Make changes & add tests
 Submit a pull request
 
 
-Code Style:
+## Code Style:
 
 Follow Go standard formatting
 
@@ -373,12 +384,12 @@ Descriptive variable names
 Include comments for complex logic
 
 
-📄 License
+## 📄 License
 
 MIT License - see the LICENSE file for details.
 
 
-🙏 Acknowledgments
+##  Acknowledgments
 
 Fiber - Fast Go framework
 
@@ -391,7 +402,7 @@ OpenAI - AI capabilities
 TailwindCSS - CSS framework
 
 
-📞 Support
+## 📞 Support
 
 Documentation: GitHub Wiki
 
@@ -402,7 +413,7 @@ Discussions: GitHub Discussions
 Email: support@jobhunter-ai.com
 
 
-🚀 Future Roadmap
+## 🚀 Future Roadmap
 Short Term
 
 Additional job sources
@@ -414,7 +425,7 @@ Mobile application
 Browser extension
 
 
-Long Term
+## Long Term
 
 Multi-user support
 
