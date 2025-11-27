@@ -1,14 +1,15 @@
-package models
+package database
 
 import (
-    "fmt"
-    "log"
-    "time"
+	"errors"
+	"fmt"
+	"log"
+	"time"
 
-    "gorm.io/driver/sqlite"
-    "gorm.io/gorm"
-    "gorm.io/gorm/logger"
-    "github.com/C9b3rD3vi1/jobhunter-tool/models"
+	"github.com/C9b3rD3vi1/jobhunter-tool/models"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type DB struct {
@@ -36,11 +37,11 @@ func InitDB() (*DB, error) {
 
     // Create default skills
     defaultSkills := []string{
-        "AWS", "Python", "Go", "Fortinet", "SIEM", "Docker", 
-        "Kubernetes", "Terraform", "JavaScript", "Cybersecurity", 
+        "AWS", "Python", "Go", "Fortinet", "SIEM", "Docker",
+        "Kubernetes", "Terraform", "JavaScript", "Cybersecurity",
         "Cloud Security", "SOC", "Network Security",
     }
-    
+
     for _, skill := range defaultSkills {
         userSkill := models.UserSkill{Skill: skill, Category: "Technical"}
         result := db.FirstOrCreate(&userSkill, models.UserSkill{Skill: skill})
@@ -54,33 +55,39 @@ func InitDB() (*DB, error) {
 }
 
 func (db *DB) SaveJob(job *models.Job) error {
-    // Generate ID if not provided
     if job.ID == "" {
         job.ID = fmt.Sprintf("%d", time.Now().UnixNano())
     }
 
-    // Use GORM's Create with conflict handling
-    result := db.Clauses(
-        gorm.OnConflict{
-            Columns:   []gorm.Column{{Name: "url"}}, // Conflict on URL
-            DoUpdates: gorm.Assignments(map[string]interface{}{
-                "title":        job.Title,
-                "company":      job.Company,
-                "location":     job.Location,
-                "description":  job.Description,
-                "salary_range": job.SalaryRange,
-                "experience":   job.Experience,
-                "posted_date":  job.PostedDate,
-                "source":       job.Source,
-                "score":        job.Score,
-                "skills":       job.Skills,
-                "tech_stack":   job.TechStack,
-            }),
-        },
-    ).Create(job)
+    var existing models.Job
+    err := db.Where("url = ?", job.URL).First(&existing).Error
 
-    return result.Error
+    if errors.Is(err, gorm.ErrRecordNotFound) {
+        // Create new record
+        return db.Create(job).Error
+    }
+
+    if err != nil {
+        return err
+    }
+
+    // Update record
+    return db.Model(&existing).Updates(map[string]interface{}{
+        "title":        job.Title,
+        "company":      job.Company,
+        "location":     job.Location,
+        "description":  job.Description,
+        "salary_range": job.SalaryRange,
+        "experience":   job.Experience,
+        "posted_date":  job.PostedDate,
+        "source":       job.Source,
+        "score":        job.Score,
+        "skills":       job.Skills,
+        "tech_stack":   job.TechStack,
+    }).Error
 }
+
+
 
 func (db *DB) GetJobs(limit, offset int) ([]models.Job, error) {
     var jobs []models.Job
@@ -88,7 +95,7 @@ func (db *DB) GetJobs(limit, offset int) ([]models.Job, error) {
         Limit(limit).
         Offset(offset).
         Find(&jobs)
-    
+
     return jobs, result.Error
 }
 
@@ -105,7 +112,7 @@ func (db *DB) SaveApplication(app *models.Application) error {
     if app.ID == "" {
         app.ID = fmt.Sprintf("%d", time.Now().UnixNano())
     }
-    
+
     result := db.Create(app)
     return result.Error
 }
@@ -132,7 +139,7 @@ func (db *DB) GetUserSkills() ([]string, error) {
     for i, userSkill := range userSkills {
         skills[i] = userSkill.Skill
     }
-    
+
     return skills, nil
 }
 
@@ -163,19 +170,19 @@ func (db *DB) GetJobStats() (totalJobs, highScoreJobs int, err error) {
 func (db *DB) SearchJobs(title, company string, minScore int) ([]models.Job, error) {
     var jobs []models.Job
     query := db.Model(&models.Job{})
-    
+
     if title != "" {
         query = query.Where("title LIKE ?", "%"+title+"%")
     }
-    
+
     if company != "" {
         query = query.Where("company LIKE ?", "%"+company+"%")
     }
-    
+
     if minScore > 0 {
         query = query.Where("score >= ?", minScore)
     }
-    
+
     result := query.Order("score DESC").Find(&jobs)
     return jobs, result.Error
 }

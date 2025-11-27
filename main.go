@@ -6,14 +6,15 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/C9b3rD3vi1/gofiber-layout/html"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/template/html/v2"
 	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
 
 	"github.com/C9b3rD3vi1/jobhunter-tool/database"
 	"github.com/C9b3rD3vi1/jobhunter-tool/handlers"
 	"github.com/C9b3rD3vi1/jobhunter-tool/scraper"
+	"github.com/C9b3rD3vi1/jobhunter-tool/ai"
 )
 
 
@@ -24,7 +25,7 @@ func main() {
     }
 
     // Initialize database with GORM
-    db, err := models.InitDB()
+    db, err := database.InitDB()
     if err != nil {
         log.Fatal("Failed to initialize database:", err)
     }
@@ -34,10 +35,12 @@ func main() {
     jobScraper := scraper.NewRealScraper(db)
 
     // Initialize AI
-    aiGenerator := handlers.NewAIGenerator(os.Getenv("OPENAI_API_KEY"))
+    aiGenerator := ai.NewAIGenerator(os.Getenv("OPENAI_API_KEY"))
 
     // Initialize template engine
     engine := html.New("./templates", ".html")
+    
+    engine.Layout("layouts/base")
     
     app := fiber.New(fiber.Config{
         Views: engine,
@@ -46,6 +49,7 @@ func main() {
     // Middleware
     app.Use(logger.New())
     app.Static("/static", "./static")
+    
 
     // Inject dependencies
     app.Use(func(c *fiber.Ctx) error {
@@ -79,8 +83,8 @@ func setupRoutes(app *fiber.App) {
     app.Post("/cover-letter", handlers.GenerateCoverLetterHandler)
     
     // API routes
-    app.Get("/api/jobs", handlers.APIJobsHandler)
-    app.Get("/api/stats", handlers.APIStatsHandler)
+    //app.Get("/api/jobs", handlers.APIJobsHandler)
+    //app.Get("/api/stats", handlers.APIStatsHandler)
 }
 
 func startBackgroundScraping(scraper *scraper.RealScraper) {

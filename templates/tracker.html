@@ -1,0 +1,195 @@
+{{block "content" .}}
+<div class="p-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold">Application Tracker</h1>
+            <p class="text-gray-600">Manage your job applications</p>
+        </div>
+        <button class="btn btn-primary" onclick="showAddForm()">Add Application</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="card text-center">
+            <div class="stat-value">{{.Stats.Applied}}</div>
+            <div class="stat-label">Applied</div>
+        </div>
+        <div class="card text-center">
+            <div class="stat-value">{{.Stats.Interviewing}}</div>
+            <div class="stat-label">Interviewing</div>
+        </div>
+        <div class="card text-center">
+            <div class="stat-value">{{.Stats.Offer}}</div>
+            <div class="stat-label">Offers</div>
+        </div>
+        <div class="card text-center">
+            <div class="stat-value">{{.Stats.Rejected}}</div>
+            <div class="stat-label">Rejected</div>
+        </div>
+    </div>
+
+    <!-- Applications Table -->
+    <div class="card">
+        <div class="overflow-x-auto">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Company</th>
+                        <th>Role</th>
+                        <th>Applied Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Applications}}
+                    <tr>
+                        <td class="font-semibold">{{.Company}}</td>
+                        <td>{{.Role}}</td>
+                        <td>{{.AppliedDate}}</td>
+                        <td>
+                            <select class="form-select form-select-sm" onchange="updateStatus('{{.ID}}', this.value)">
+                                <option value="Applied" {{if eq .Status "Applied"}}selected{{end}}>Applied</option>
+                                <option value="Interviewing" {{if eq .Status "Interviewing"}}selected{{end}}>Interviewing</option>
+                                <option value="Offer" {{if eq .Status "Offer"}}selected{{end}}>Offer</option>
+                                <option value="Rejected" {{if eq .Status "Rejected"}}selected{{end}}>Rejected</option>
+                            </select>
+                        </td>
+                        <td>
+                            <div class="flex gap-2">
+                                <button class="btn btn-outline btn-sm" onclick="editApplication('{{.ID}}')">Edit</button>
+                                <button class="btn btn-outline btn-sm" onclick="deleteApplication('{{.ID}}')">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td colspan="5" class="text-center py-8">
+                            <p class="text-gray-500">No applications yet.</p>
+                            <button class="btn btn-primary mt-2" onclick="showAddForm()">Add Your First Application</button>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Application Modal -->
+<div id="addModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg max-w-md w-full">
+        <div class="p-6">
+            <h3 class="text-xl font-bold mb-4">Add Application</h3>
+            <form id="addForm" onsubmit="saveApplication(event)">
+                <div class="space-y-4">
+                    <div class="form-group">
+                        <label class="form-label">Company</label>
+                        <input type="text" class="form-input" name="company" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <input type="text" class="form-input" name="role" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Applied Date</label>
+                        <input type="date" class="form-input" name="applied_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="Applied">Applied</option>
+                            <option value="Interviewing">Interviewing</option>
+                            <option value="Offer">Offer</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-textarea" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 mt-6">
+                    <button type="button" class="btn btn-outline" onclick="hideAddForm()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function showAddForm() {
+    document.getElementById('addModal').classList.remove('hidden');
+}
+
+function hideAddForm() {
+    document.getElementById('addModal').classList.add('hidden');
+}
+
+function saveApplication(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData);
+    
+    fetch('/tracker/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.status === 'success') {
+            hideAddForm();
+            location.reload();
+        } else {
+            alert('Failed to save application');
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error.message);
+    });
+}
+
+function updateStatus(appId, status) {
+    fetch(`/tracker/${appId}/status`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: status })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.status !== 'success') {
+            alert('Failed to update status');
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error.message);
+    });
+}
+
+function deleteApplication(appId) {
+    if (confirm('Are you sure you want to delete this application?')) {
+        fetch(`/tracker/${appId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.status === 'success') {
+                location.reload();
+            } else {
+                alert('Failed to delete application');
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+        });
+    }
+}
+</script>
+{{end}}

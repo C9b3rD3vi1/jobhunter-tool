@@ -1,0 +1,148 @@
+
+{{block "content" .}}
+<div class="p-6">
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold mb-4">JobHunter AI</h1>
+        <p class="text-gray-600">Intelligent job search and application automation</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card card">
+            <div class="stat-value">{{.TotalJobs}}</div>
+            <div class="stat-label">Total Jobs</div>
+        </div>
+        <div class="stat-card card">
+            <div class="stat-value">{{.HighScoreJobs}}</div>
+            <div class="stat-label">High Match</div>
+        </div>
+        <div class="stat-card card">
+            <div class="stat-value">{{.TotalApplications}}</div>
+            <div class="stat-label">Applications</div>
+        </div>
+        <div class="stat-card card">
+            <div class="stat-value">{{.ResponseRate}}%</div>
+            <div class="stat-label">Response Rate</div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div class="card text-center">
+            <h3 class="text-lg font-semibold mb-2">Find Jobs</h3>
+            <p class="text-sm text-gray-600 mb-4">Scrape latest job listings</p>
+            <button class="btn btn-primary w-full" onclick="startScraping()">
+                <span class="loading hidden" id="scrapingLoader"></span>
+                Scrape Jobs
+            </button>
+        </div>
+        
+        <div class="card text-center">
+            <h3 class="text-lg font-semibold mb-2">Analyze Skills</h3>
+            <p class="text-sm text-gray-600 mb-4">Check job fit</p>
+            <a href="/analyzer" class="btn btn-outline w-full">Analyze</a>
+        </div>
+        
+        <div class="card text-center">
+            <h3 class="text-lg font-semibold mb-2">Track Applications</h3>
+            <p class="text-sm text-gray-600 mb-4">Manage your applications</p>
+            <a href="/tracker" class="btn btn-outline w-full">View Tracker</a>
+        </div>
+    </div>
+
+    <!-- Recent High-Score Jobs -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">High Probability Opportunities</h2>
+        </div>
+        
+        <div class="space-y-4">
+            {{range .RecentJobs}}
+            <div class="job-card card {{if gt .Score 80}}high-score{{else if gt .Score 60}}medium-score{{else}}low-score{{end}}">
+                <div class="flex justify-between items-start">
+                    <div style="flex: 1;">
+                        <h3 class="job-title">{{.Title}}</h3>
+                        <p class="job-company">{{.Company}} • {{.Location}}</p>
+                        <div class="job-meta">
+                            <span>{{.Source}}</span>
+                            <span>{{.PostedDate}}</span>
+                            {{if .SalaryRange}}<span>{{.SalaryRange}}</span>{{end}}
+                        </div>
+                        <div class="job-skills">
+                            {{range .Skills}}
+                            <span class="skill-tag">{{.}}</span>
+                            {{end}}
+                        </div>
+                    </div>
+                    
+                    <div class="text-right" style="margin-left: 1rem;">
+                        <div class="score-badge {{if gt .Score 80}}score-high{{else if gt .Score 60}}score-medium{{else}}score-low{{end}}">
+                            {{.Score}}% Match
+                        </div>
+                        <div class="mt-2 flex gap-2">
+                            <button class="btn btn-primary btn-sm" 
+                                    onclick="applyForJob('{{.ID}}', '{{.Title}}', '{{.Company}}')">
+                                Apply
+                            </button>
+                            <a href="{{.URL}}" target="_blank" class="btn btn-outline btn-sm">
+                                View
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{else}}
+            <div class="text-center py-8">
+                <p class="text-gray-500">No jobs found. <button class="btn btn-link" onclick="startScraping()">Scrape jobs now</button></p>
+            </div>
+            {{end}}
+        </div>
+    </div>
+</div>
+
+<script>
+function startScraping() {
+    const loader = document.getElementById('scrapingLoader');
+    const button = loader.parentElement;
+    
+    loader.classList.remove('hidden');
+    button.disabled = true;
+    
+    fetch('/jobs/scrape')
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            setTimeout(() => location.reload(), 2000);
+        })
+        .catch(error => {
+            alert('Scraping failed: ' + error.message);
+        })
+        .finally(() => {
+            loader.classList.add('hidden');
+            button.disabled = false;
+        });
+}
+
+function applyForJob(jobId, title, company) {
+    if (confirm(`Apply for ${title} at ${company}?`)) {
+        fetch(`/jobs/${jobId}/apply`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                applied_date: new Date().toISOString().split('T')[0]
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        })
+        .catch(error => {
+            alert('Application failed: ' + error.message);
+        });
+    }
+}
+</script>
+{{end}}

@@ -1,0 +1,264 @@
+{{block "content" .}}
+<div class="p-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold">Job Board</h1>
+            <p class="text-gray-600">Find your next cybersecurity role</p>
+        </div>
+        <button class="btn btn-primary" onclick="startScraping()">
+            <span class="loading hidden" id="scrapingLoader"></span>
+            Refresh Jobs
+        </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="form-group">
+                <label class="form-label">Min Score</label>
+                <select class="form-select" onchange="filterJobs()">
+                    <option value="">All Scores</option>
+                    <option value="80">80%+</option>
+                    <option value="60">60%+</option>
+                    <option value="40">40%+</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Skills</label>
+                <select class="form-select" onchange="filterJobs()">
+                    <option value="">All Skills</option>
+                    <option value="aws">AWS</option>
+                    <option value="python">Python</option>
+                    <option value="fortinet">Fortinet</option>
+                    <option value="siem">SIEM</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Company</label>
+                <input type="text" class="form-input" placeholder="Filter by company..." oninput="filterJobs()">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Location</label>
+                <select class="form-select" onchange="filterJobs()">
+                    <option value="">All Locations</option>
+                    <option value="nairobi">Nairobi</option>
+                    <option value="remote">Remote</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jobs List -->
+    <div class="space-y-4">
+        {{range .Jobs}}
+        <div class="job-card card {{if gt .Score 80}}high-score{{else if gt .Score 60}}medium-score{{else}}low-score{{end}}">
+            <div class="flex justify-between items-start">
+                <div style="flex: 1;">
+                    <h3 class="job-title">{{.Title}}</h3>
+                    <p class="job-company">{{.Company}} • {{.Location}}</p>
+                    <div class="job-meta">
+                        <span>{{.Source}}</span>
+                        <span>{{.PostedDate}}</span>
+                        {{if .SalaryRange}}<span>{{.SalaryRange}}</span>{{end}}
+                        {{if .Experience}}<span>{{.Experience}}</span>{{end}}
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">{{truncate .Description 200}}</p>
+                    <div class="job-skills">
+                        {{range .Skills}}
+                        <span class="skill-tag">{{.}}</span>
+                        {{end}}
+                    </div>
+                    <div class="job-skills mt-2">
+                        {{range .TechStack}}
+                        <span class="skill-tag" style="background: var(--gray-50); color: var(--gray-600);">{{.}}</span>
+                        {{end}}
+                    </div>
+                </div>
+                
+                <div class="text-right" style="margin-left: 1rem; min-width: 120px;">
+                    <div class="score-badge {{if gt .Score 80}}score-high{{else if gt .Score 60}}score-medium{{else}}score-low{{end}}">
+                        {{.Score}}% Match
+                    </div>
+                    <div class="mt-3 flex flex-col gap-2">
+                        <button class="btn btn-primary btn-sm" 
+                                onclick="applyForJob('{{.ID}}', '{{.Title}}', '{{.Company}}')">
+                            Quick Apply
+                        </button>
+                        <button class="btn btn-outline btn-sm" 
+                                onclick="analyzeJob('{{.ID}}', '{{.Title}}', '{{.Company}}', `{{.Description}}`)">
+                            Analyze
+                        </button>
+                        <a href="{{.URL}}" target="_blank" class="btn btn-outline btn-sm">
+                            View Original
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{else}}
+        <div class="card text-center py-12">
+            <h3 class="text-lg font-semibold mb-2">No jobs found</h3>
+            <p class="text-gray-600 mb-4">Try refreshing the job listings or adjusting your filters</p>
+            <button class="btn btn-primary" onclick="startScraping()">Scrape Jobs</button>
+        </div>
+        {{end}}
+    </div>
+
+    <!-- Pagination -->
+    {{if .HasNext}}
+    <div class="flex justify-center mt-8">
+        <button class="btn btn-outline">Load More</button>
+    </div>
+    {{end}}
+</div>
+
+<!-- Analysis Modal -->
+<div id="analysisModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg max-w-2xl w-full max-h-90vh overflow-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Job Analysis</h3>
+                <button onclick="closeAnalysis()" class="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            <div id="analysisResults"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function startScraping() {
+    const loader = document.getElementById('scrapingLoader');
+    const button = loader.parentElement;
+    
+    loader.classList.remove('hidden');
+    button.disabled = true;
+    
+    fetch('/jobs/scrape')
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            setTimeout(() => location.reload(), 3000);
+        })
+        .catch(error => {
+            alert('Scraping failed: ' + error.message);
+        })
+        .finally(() => {
+            loader.classList.add('hidden');
+            button.disabled = false;
+        });
+}
+
+function filterJobs() {
+    // Simple client-side filtering
+    const minScore = document.querySelector('select').value;
+    const searchTerm = document.querySelector('input').value.toLowerCase();
+    
+    document.querySelectorAll('.job-card').forEach(card => {
+        const score = parseInt(card.querySelector('.score-badge').textContent);
+        const company = card.querySelector('.job-company').textContent.toLowerCase();
+        const title = card.querySelector('.job-title').textContent.toLowerCase();
+        
+        const scoreMatch = !minScore || score >= parseInt(minScore);
+        const searchMatch = !searchTerm || company.includes(searchTerm) || title.includes(searchTerm);
+        
+        card.style.display = scoreMatch && searchMatch ? 'block' : 'none';
+    });
+}
+
+function analyzeJob(jobId, title, company, description) {
+    const modal = document.getElementById('analysisModal');
+    const results = document.getElementById('analysisResults');
+    
+    results.innerHTML = `
+        <div class="text-center py-8">
+            <div class="loading"></div>
+            <p class="mt-2">Analyzing job fit...</p>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+    
+    fetch('/analyze-skills', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            job_description: description
+        })
+    })
+    .then(response => response.json())
+    .then(analysis => {
+        results.innerHTML = `
+            <div class="space-y-4">
+                <div class="flex items-center gap-4">
+                    <div class="text-3xl font-bold text-primary">${analysis.fit_score}%</div>
+                    <div>
+                        <h4 class="font-semibold">Overall Fit Score</h4>
+                        <p class="text-sm text-gray-600">Based on skill matching</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-4 border rounded-lg">
+                        <h5 class="font-semibold text-success mb-2">Matching Skills</h5>
+                        <div class="flex flex-wrap gap-1">
+                            ${analysis.matching_skills.map(skill => 
+                                `<span class="badge badge-success">${skill}</span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 border rounded-lg">
+                        <h5 class="font-semibold text-error mb-2">Missing Skills</h5>
+                        <div class="flex flex-wrap gap-1">
+                            ${analysis.missing_skills.map(skill => 
+                                `<span class="badge badge-error">${skill}</span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                </div>
+                
+                ${analysis.recommendations && analysis.recommendations.length ? `
+                <div class="p-4 border rounded-lg">
+                    <h5 class="font-semibold text-primary mb-2">Recommendations</h5>
+                    <ul class="list-disc list-inside space-y-1 text-sm">
+                        ${analysis.recommendations.map(rec => 
+                            `<li>${rec}</li>`
+                        ).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+                
+                <div class="flex justify-end gap-2">
+                    <button class="btn btn-primary" onclick="generateCoverLetter('${title}', '${company}', \`${description}\`)">
+                        Generate Cover Letter
+                    </button>
+                    <button class="btn btn-outline" onclick="closeAnalysis()">Close</button>
+                </div>
+            </div>
+        `;
+    })
+    .catch(error => {
+        results.innerHTML = `
+            <div class="alert alert-error">
+                Analysis failed: ${error.message}
+            </div>
+        `;
+    });
+}
+
+function closeAnalysis() {
+    document.getElementById('analysisModal').classList.add('hidden');
+}
+
+function generateCoverLetter(title, company, description) {
+    // Implementation for cover letter generation
+    alert('Cover letter generation would be implemented here');
+}
+</script>
+{{end}}

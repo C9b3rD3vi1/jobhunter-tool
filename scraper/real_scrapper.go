@@ -7,9 +7,9 @@ import (
     "strings"
     "time"
 
-    "github.com/PuerkitoBio/goquery"
     "github.com/gocolly/colly/v2"
     "github.com/C9b3rD3vi1/jobhunter-tool/models"
+    "github.com/C9b3rD3vi1/jobhunter-tool/database"
 )
 
 type RealScraper struct {

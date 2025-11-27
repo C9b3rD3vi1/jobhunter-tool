@@ -1,0 +1,209 @@
+{{ block "content" .}}
+
+<div class="p-6">
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-2xl font-bold">Skills Gap Analyzer</h1>
+        <p class="text-gray-600">Compare your skills with job requirements</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Input Form -->
+        <div class="card">
+            <h2 class="card-title mb-4">Analyze Job Description</h2>
+            
+            <form onsubmit="analyzeSkills(event)">
+                <div class="form-group">
+                    <label class="form-label">Job Description</label>
+                    <textarea class="form-textarea" name="job_description" placeholder="Paste the job description here..." required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Your Skills (comma separated)</label>
+                    <textarea class="form-textarea" name="user_skills" placeholder="AWS, Python, Fortinet, SIEM, Docker...">{{.UserSkills}}</textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-full">
+                    <span class="loading hidden" id="analyzeLoader"></span>
+                    Analyze Skills Gap
+                </button>
+            </form>
+        </div>
+
+        <!-- Results -->
+        <div class="card">
+            <h2 class="card-title mb-4">Analysis Results</h2>
+            <div id="analysisResults" class="text-center text-gray-500">
+                <p>Enter a job description and your skills to see the analysis</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Your Skills -->
+    <div class="card mt-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="card-title">Your Skills Profile</h2>
+            <button class="btn btn-outline btn-sm" onclick="showAddSkill()">Add Skill</button>
+        </div>
+        
+        <div class="flex flex-wrap gap-2">
+            {{range .SkillsList}}
+            <span class="skill-tag">{{.}}</span>
+            {{else}}
+            <p class="text-gray-500">No skills added yet. Add your skills to get better job matches.</p>
+            {{end}}
+        </div>
+    </div>
+</div>
+
+<!-- Add Skill Modal -->
+<div id="addSkillModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg max-w-sm w-full">
+        <div class="p-6">
+            <h3 class="text-xl font-bold mb-4">Add Skill</h3>
+            <form onsubmit="addSkill(event)">
+                <div class="form-group">
+                    <input type="text" class="form-input" placeholder="Enter skill..." id="newSkill" required>
+                </div>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button type="button" class="btn btn-outline" onclick="hideAddSkill()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function analyzeSkills(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData);
+    
+    const loader = document.getElementById('analyzeLoader');
+    const button = loader.parentElement;
+    
+    loader.classList.remove('hidden');
+    button.disabled = true;
+    
+    fetch('/analyze-skills', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(analysis => {
+        displayAnalysis(analysis);
+    })
+    .catch(error => {
+        document.getElementById('analysisResults').innerHTML = `
+            <div class="alert alert-error">
+                Analysis failed: ${error.message}
+            </div>
+        `;
+    })
+    .finally(() => {
+        loader.classList.add('hidden');
+        button.disabled = false;
+    });
+}
+
+function displayAnalysis(analysis) {
+    const results = document.getElementById('analysisResults');
+    
+    results.innerHTML = `
+        <div class="space-y-6">
+            <!-- Fit Score -->
+            <div class="text-center">
+                <div class="text-4xl font-bold text-primary mb-2">${analysis.fit_score}%</div>
+                <p class="text-gray-600">Overall Skills Fit</p>
+            </div>
+            
+            <!-- Skills Match -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-4 border border-success rounded-lg">
+                    <h4 class="font-semibold text-success mb-3">✅ Matching Skills</h4>
+                    <div class="flex flex-wrap gap-1">
+                        ${analysis.matching_skills.map(skill => 
+                            `<span class="badge badge-success">${skill}</span>`
+                        ).join('')}
+                        ${analysis.matching_skills.length === 0 ? '<span class="text-gray-500">No matches</span>' : ''}
+                    </div>
+                </div>
+                
+                <div class="p-4 border border-error rounded-lg">
+                    <h4 class="font-semibold text-error mb-3">❌ Missing Skills</h4>
+                    <div class="flex flex-wrap gap-1">
+                        ${analysis.missing_skills.map(skill => 
+                            `<span class="badge badge-error">${skill}</span>`
+                        ).join('')}
+                        ${analysis.missing_skills.length === 0 ? '<span class="text-gray-500">No missing skills</span>' : ''}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Transferable Skills -->
+            ${analysis.transferable && analysis.transferable.length > 0 ? `
+            <div class="p-4 border border-primary rounded-lg">
+                <h4 class="font-semibold text-primary mb-3">🔄 Transferable Skills</h4>
+                <div class="flex flex-wrap gap-1">
+                    ${analysis.transferable.map(skill => 
+                        `<span class="badge badge-outline">${skill}</span>`
+                    ).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- Recommendations -->
+            ${analysis.recommendations && analysis.recommendations.length > 0 ? `
+            <div class="p-4 border rounded-lg">
+                <h4 class="font-semibold mb-3">💡 Recommendations</h4>
+                <ul class="list-disc list-inside space-y-1 text-sm">
+                    ${analysis.recommendations.map(rec => 
+                        `<li>${rec}</li>`
+                    ).join('')}
+                </ul>
+            </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+function showAddSkill() {
+    document.getElementById('addSkillModal').classList.remove('hidden');
+}
+
+function hideAddSkill() {
+    document.getElementById('addSkillModal').classList.add('hidden');
+}
+
+function addSkill(event) {
+    event.preventDefault();
+    const skill = document.getElementById('newSkill').value.trim();
+    
+    if (skill) {
+        fetch('/skills/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ skill: skill })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.status === 'success') {
+                hideAddSkill();
+                location.reload();
+            } else {
+                alert('Failed to add skill');
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+        });
+    }
+}
+</script>
+{{end}}

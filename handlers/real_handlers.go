@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
+	"time"
 	"strconv"
 	"strings"
 
@@ -22,7 +22,8 @@ func IndexHandler(c *fiber.Ctx) error {
     }
     
     var totalApplications int
-    db.QueryRow("SELECT COUNT(*) FROM applications").Scan(&totalApplications)
+    db.Raw("SELECT COUNT(*) FROM applications").Scan(&totalApplications)
+
     
     recentJobs, _ := db.GetJobs(5, 0)
     
@@ -96,7 +97,7 @@ func ScrapeJobsHandler(c *fiber.Ctx) error {
 
 func AnalyzeSkillsHandler(c *fiber.Ctx) error {
     ai := c.Locals("ai").(*ai.AIGenerator)
-    db := c.Locals("db").(*models.DB)
+    db := c.Locals("db").(*database.DB)
     
     var request struct {
         JobDescription string   `json:"job_description"`
@@ -155,7 +156,7 @@ func GenerateCoverLetterHandler(c *fiber.Ctx) error {
 }
 
 func AddApplicationHandler(c *fiber.Ctx) error {
-    db := c.Locals("db").(*models.DB)
+    db := c.Locals("db").(*database.DB)
     
     var app models.Application
     if err := c.BodyParser(&app); err != nil {
@@ -169,21 +170,10 @@ func AddApplicationHandler(c *fiber.Ctx) error {
     return c.JSON(fiber.Map{"status": "success", "id": app.ID})
 }
 
-func TrackerHandler(c *fiber.Ctx) error {
-    db := c.Locals("db").(*models.DB)
-    
-    applications, err := db.GetApplications()
-    if err != nil {
-        return c.Status(500).SendString("Error fetching applications")
-    }
-    
-    return c.Render("tracker", fiber.Map{
-        "Applications": applications,
-    })
-}
+
 
 func ApplyHandler(c *fiber.Ctx) error {
-    db := c.Locals("db").(*models.DB)
+    db := c.Locals("db").(*database.DB)
     jobID := c.Params("id")
     
     job, err := db.GetJobByID(jobID)
@@ -219,7 +209,7 @@ func CompanyHandler(c *fiber.Ctx) error {
     companyName := c.Params("name")
     
     // Get company-specific jobs
-    db := c.Locals("db").(*models.DB)
+    db := c.Locals("db").(*database.DB)
     jobs, err := db.GetJobs(50, 0) // Get more jobs to filter
     if err != nil {
         return c.Status(500).SendString("Error fetching jobs")
@@ -274,4 +264,69 @@ func filterJobs(jobs []models.Job, scoreFilter, skillFilter, companyFilter strin
     }
     
     return filtered
+}
+
+// Additional handler functions
+func TrackerHandler(c *fiber.Ctx) error {
+    db := c.Locals("db").(*database.DB)
+    
+    applications, err := db.GetApplications()
+    if err != nil {
+        return c.Status(500).SendString("Error fetching applications")
+    }
+    
+    // Calculate stats
+    stats := map[string]int{
+        "Applied":      0,
+        "Interviewing": 0,
+        "Offer":        0,
+        "Rejected":     0,
+    }
+    
+    for _, app := range applications {
+        stats[app.Status]++
+    }
+    
+    return c.Render("tracker", fiber.Map{
+        "Page":          "tracker",
+        "Title":         "Application Tracker",
+        "Applications":  applications,
+        "Stats":         stats,
+    })
+}
+
+func AnalyzerHandler(c *fiber.Ctx) error {
+    db := c.Locals("db").(*database.DB)
+    
+    userSkills, err := db.GetUserSkills()
+    if err != nil {
+        userSkills = []string{"AWS", "Python", "Go", "Fortinet", "SIEM", "Docker"}
+    }
+    
+    skillsList := strings.Join(userSkills, ", ")
+    
+    return c.Render("analyzer", fiber.Map{
+        "Page":       "analyzer",
+        "Title":      "Skills Analyzer", 
+        "UserSkills": skillsList,
+        "SkillsList": userSkills,
+    })
+}
+
+func AddSkillHandler(c *fiber.Ctx) error {
+    db := c.Locals("db").(*database.DB)
+    
+    var request struct {
+        Skill string `json:"skill"`
+    }
+    
+    if err := c.BodyParser(&request); err != nil {
+        return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+    }
+    
+    if err := db.AddUserSkill(request.Skill); err != nil {
+        return c.Status(500).JSON(fiber.Map{"error": "Failed to add skill"})
+    }
+    
+    return c.JSON(fiber.Map{"status": "success"})
 }
