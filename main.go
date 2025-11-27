@@ -86,8 +86,8 @@ func setupRoutes(app *fiber.App) {
     app.Post("/cover-letter", handlers.GenerateCoverLetterHandler)
     
     // API routes
-    //app.Get("/api/jobs", handlers.APIJobsHandler)
-   // app.Get("/api/stats", handlers.APIStatsHandler)
+    app.Get("/api/jobs", handlers.APIJobsHandler)
+    app.Get("/api/stats", handlers.APIStatsHandler)
     app.Post("/skills/add", handlers.AddSkillHandler)
 }
 

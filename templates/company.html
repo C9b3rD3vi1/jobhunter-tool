@@ -1,0 +1,91 @@
+{{block "content" .}}
+
+<div class="page-header">
+    <h1>Jobs at {{.CompanyName}}</h1>
+    <p class="subtitle">Cybersecurity opportunities at {{.CompanyName}}</p>
+</div>
+
+<div class="jobs-list">
+    {{range .Jobs}}
+    <div class="job-card {{if gt .Score 80}}high-score{{else if gt .Score 60}}medium-score{{else}}low-score{{end}}">
+        <div class="job-content">
+            <div class="job-main">
+                <h3 class="job-title">{{.Title}}</h3>
+                <p class="job-company">{{.Company}} • {{.Location}}</p>
+                <div class="job-meta">
+                    <span class="job-source">{{.Source}}</span>
+                    <span class="job-date">{{.PostedDate}}</span>
+                    {{if .SalaryRange}}<span class="job-salary">{{.SalaryRange}}</span>{{end}}
+                </div>
+                
+                {{if .Description}}
+                <p class="job-description">{{.Description 200}}</p>
+                {{end}}
+                
+                <div class="job-skills">
+                    {{range .Skills}}
+                    <span class="skill-tag">{{.}}</span>
+                    {{end}}
+                </div>
+            </div>
+            
+            <div class="job-actions">
+                <div class="score-badge {{if gt .Score 80}}score-high{{else if gt .Score 60}}score-medium{{else}}score-low{{end}}">
+                    {{.Score}}% Match
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary btn-sm" 
+                            onclick="applyForJob('{{.ID}}', '{{.Title}}', '{{.Company}}')">
+                        Apply
+                    </button>
+                    <button class="btn btn-outline btn-sm" 
+                            onclick="analyzeJob('{{.ID}}', '{{.Title}}', '{{.Company}}', `{{.Description}}`)">
+                        Analyze
+                    </button>
+                    {{if .URL}}
+                    <a href="{{.URL}}" target="_blank" class="btn btn-outline btn-sm">
+                        View
+                    </a>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+    {{else}}
+    <div class="empty-state">
+        <h3>No jobs found at {{.CompanyName}}</h3>
+        <p>Try checking back later or explore other companies</p>
+        <a href="/jobs" class="btn btn-primary">Browse All Jobs</a>
+    </div>
+    {{end}}
+</div>
+
+<script>
+// Reuse functions from jobs page
+function applyForJob(jobId, title, company) {
+    if (confirm(`Apply for "${title}" at ${company}?`)) {
+        fetch(`/jobs/${jobId}/apply`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                applied_date: new Date().toISOString().split('T')[0]
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            showNotification(data.message, 'success');
+        })
+        .catch(error => {
+            showNotification('Application failed: ' + error.message, 'error');
+        });
+    }
+}
+
+function analyzeJob(jobId, title, company, description) {
+    // Implementation would be similar to jobs page
+    showNotification('Analysis feature would open here', 'info');
+}
+</script>
+{{end}}

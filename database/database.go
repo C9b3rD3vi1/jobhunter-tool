@@ -195,6 +195,12 @@ func (db *DB) GetApplicationStats() (int, error) {
     return int(count), result.Error
 }
 
+func (db *DB) GetJobsByCompany(companyName string) ([]models.Job, error) {
+    var jobs []models.Job
+    result := db.Where("company = ?", companyName).Find(&jobs)
+    return jobs, result.Error
+}
+
 func (db *DB) Close() error {
     sqlDB, err := db.DB.DB()
     if err != nil {

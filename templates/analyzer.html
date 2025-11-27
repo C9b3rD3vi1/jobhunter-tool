@@ -1,76 +1,90 @@
 {{ block "content" .}}
 
-<div class="p-6">
-    <!-- Header -->
-    <div class="text-center mb-8">
-        <h1 class="text-2xl font-bold">Skills Gap Analyzer</h1>
-        <p class="text-gray-600">Compare your skills with job requirements</p>
-    </div>
+<div class="page-header">
+    <h1>Skills Gap Analyzer</h1>
+    <p class="subtitle">Compare your skills with job requirements</p>
+</div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Input Form -->
-        <div class="card">
-            <h2 class="card-title mb-4">Analyze Job Description</h2>
+<div class="analyzer-layout">
+    <!-- Input Form -->
+    <div class="analyzer-section">
+        <div class="section-card">
+            <h2>Analyze Job Description</h2>
             
             <form onsubmit="analyzeSkills(event)">
                 <div class="form-group">
-                    <label class="form-label">Job Description</label>
-                    <textarea class="form-textarea" name="job_description" placeholder="Paste the job description here..." required></textarea>
+                    <label class="form-label">Job Description *</label>
+                    <textarea class="form-textarea large" name="job_description" 
+                              placeholder="Paste the job description here..." required></textarea>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Your Skills (comma separated)</label>
-                    <textarea class="form-textarea" name="user_skills" placeholder="AWS, Python, Fortinet, SIEM, Docker...">{{.UserSkills}}</textarea>
+                    <label class="form-label">Your Skills</label>
+                    <textarea class="form-textarea" name="user_skills" 
+                              placeholder="AWS, Python, Fortinet, SIEM, Docker...">{{.UserSkills}}</textarea>
+                    <small class="form-help">Separate skills with commas</small>
                 </div>
                 
-                <button type="submit" class="btn btn-primary w-full">
+                <button type="submit" class="btn btn-primary full-width">
                     <span class="loading hidden" id="analyzeLoader"></span>
                     Analyze Skills Gap
                 </button>
             </form>
         </div>
+    </div>
 
-        <!-- Results -->
-        <div class="card">
-            <h2 class="card-title mb-4">Analysis Results</h2>
-            <div id="analysisResults" class="text-center text-gray-500">
-                <p>Enter a job description and your skills to see the analysis</p>
+    <!-- Results -->
+    <div class="analyzer-section">
+        <div class="section-card">
+            <h2>Analysis Results</h2>
+            <div id="analysisResults" class="analyzer-results">
+                <div class="placeholder-state">
+                    <p>Enter a job description and your skills to see the analysis</p>
+                </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Your Skills -->
-    <div class="card mt-8">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="card-title">Your Skills Profile</h2>
+<!-- Your Skills Profile -->
+<div class="section">
+    <div class="section-card">
+        <div class="section-header">
+            <h2>Your Skills Profile</h2>
             <button class="btn btn-outline btn-sm" onclick="showAddSkill()">Add Skill</button>
         </div>
         
-        <div class="flex flex-wrap gap-2">
+        <div class="skills-profile">
             {{range .SkillsList}}
-            <span class="skill-tag">{{.}}</span>
+            <span class="skill-tag profile">{{.}}</span>
             {{else}}
-            <p class="text-gray-500">No skills added yet. Add your skills to get better job matches.</p>
+            <div class="empty-state small">
+                <p>No skills added yet. Add your skills to get better job matches.</p>
+            </div>
             {{end}}
         </div>
     </div>
 </div>
 
 <!-- Add Skill Modal -->
-<div id="addSkillModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-lg max-w-sm w-full">
-        <div class="p-6">
-            <h3 class="text-xl font-bold mb-4">Add Skill</h3>
-            <form onsubmit="addSkill(event)">
-                <div class="form-group">
-                    <input type="text" class="form-input" placeholder="Enter skill..." id="newSkill" required>
-                </div>
-                <div class="flex justify-end gap-2 mt-4">
-                    <button type="button" class="btn btn-outline" onclick="hideAddSkill()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add</button>
-                </div>
-            </form>
+<div id="addSkillModal" class="modal">
+    <div class="modal-content small">
+        <div class="modal-header">
+            <h3>Add Skill</h3>
+            <button class="modal-close" onclick="hideAddSkill()">×</button>
         </div>
+        <form onsubmit="addSkill(event)">
+            <div class="modal-body">
+                <div class="form-group">
+                    <input type="text" class="form-input" placeholder="Enter skill (e.g., AWS, Python, Docker)..." 
+                           id="newSkill" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="hideAddSkill()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Add Skill</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -80,11 +94,17 @@ function analyzeSkills(event) {
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData);
     
+    // Convert skills string to array
+    if (data.user_skills) {
+        data.user_skills = data.user_skills.split(',').map(skill => skill.trim()).filter(skill => skill);
+    }
+    
     const loader = document.getElementById('analyzeLoader');
     const button = loader.parentElement;
     
     loader.classList.remove('hidden');
     button.disabled = true;
+    button.innerHTML = '<span class="loading"></span> Analyzing...';
     
     fetch('/analyze-skills', {
         method: 'POST',
@@ -99,14 +119,15 @@ function analyzeSkills(event) {
     })
     .catch(error => {
         document.getElementById('analysisResults').innerHTML = `
-            <div class="alert alert-error">
-                Analysis failed: ${error.message}
+            <div class="error-state">
+                <p>Analysis failed: ${error.message}</p>
             </div>
         `;
     })
     .finally(() => {
         loader.classList.add('hidden');
         button.disabled = false;
+        button.innerHTML = 'Analyze Skills Gap';
     });
 }
 
@@ -114,43 +135,50 @@ function displayAnalysis(analysis) {
     const results = document.getElementById('analysisResults');
     
     results.innerHTML = `
-        <div class="space-y-6">
+        <div class="analysis-view">
             <!-- Fit Score -->
-            <div class="text-center">
-                <div class="text-4xl font-bold text-primary mb-2">${analysis.fit_score}%</div>
-                <p class="text-gray-600">Overall Skills Fit</p>
+            <div class="fit-score-display">
+                <div class="score-circle large ${getScoreClass(analysis.fit_score)}">
+                    ${analysis.fit_score}%
+                </div>
+                <div class="score-info">
+                    <h3>Overall Skills Fit</h3>
+                    <p>${getFitDescription(analysis.fit_score)}</p>
+                </div>
             </div>
             
             <!-- Skills Match -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="p-4 border border-success rounded-lg">
-                    <h4 class="font-semibold text-success mb-3">✅ Matching Skills</h4>
-                    <div class="flex flex-wrap gap-1">
+            <div class="skills-comparison-grid">
+                <div class="skills-column matching">
+                    <h4>✅ Matching Skills</h4>
+                    <div class="skills-container">
                         ${analysis.matching_skills.map(skill => 
-                            `<span class="badge badge-success">${skill}</span>`
+                            `<span class="skill-badge match">${skill}</span>`
                         ).join('')}
-                        ${analysis.matching_skills.length === 0 ? '<span class="text-gray-500">No matches</span>' : ''}
+                        ${analysis.matching_skills.length === 0 ? 
+                            '<div class="no-items">No matching skills found</div>' : ''}
                     </div>
                 </div>
                 
-                <div class="p-4 border border-error rounded-lg">
-                    <h4 class="font-semibold text-error mb-3">❌ Missing Skills</h4>
-                    <div class="flex flex-wrap gap-1">
+                <div class="skills-column missing">
+                    <h4>❌ Missing Skills</h4>
+                    <div class="skills-container">
                         ${analysis.missing_skills.map(skill => 
-                            `<span class="badge badge-error">${skill}</span>`
+                            `<span class="skill-badge missing">${skill}</span>`
                         ).join('')}
-                        ${analysis.missing_skills.length === 0 ? '<span class="text-gray-500">No missing skills</span>' : ''}
+                        ${analysis.missing_skills.length === 0 ? 
+                            '<div class="no-items">No missing skills - excellent fit!</div>' : ''}
                     </div>
                 </div>
             </div>
             
             <!-- Transferable Skills -->
             ${analysis.transferable && analysis.transferable.length > 0 ? `
-            <div class="p-4 border border-primary rounded-lg">
-                <h4 class="font-semibold text-primary mb-3">🔄 Transferable Skills</h4>
-                <div class="flex flex-wrap gap-1">
+            <div class="transferable-skills">
+                <h4>🔄 Transferable Skills</h4>
+                <div class="skills-container">
                     ${analysis.transferable.map(skill => 
-                        `<span class="badge badge-outline">${skill}</span>`
+                        `<span class="skill-badge transferable">${skill}</span>`
                     ).join('')}
                 </div>
             </div>
@@ -158,25 +186,40 @@ function displayAnalysis(analysis) {
             
             <!-- Recommendations -->
             ${analysis.recommendations && analysis.recommendations.length > 0 ? `
-            <div class="p-4 border rounded-lg">
-                <h4 class="font-semibold mb-3">💡 Recommendations</h4>
-                <ul class="list-disc list-inside space-y-1 text-sm">
+            <div class="recommendations-section">
+                <h4>💡 Recommendations</h4>
+                <div class="recommendations-list">
                     ${analysis.recommendations.map(rec => 
-                        `<li>${rec}</li>`
+                        `<div class="recommendation-item">${rec}</div>`
                     ).join('')}
-                </ul>
+                </div>
             </div>
             ` : ''}
         </div>
     `;
 }
 
+function getScoreClass(score) {
+    if (score >= 80) return 'excellent';
+    if (score >= 60) return 'good';
+    if (score >= 40) return 'fair';
+    return 'poor';
+}
+
+function getFitDescription(score) {
+    if (score >= 80) return 'Excellent match! You have most required skills.';
+    if (score >= 60) return 'Good match. You have many required skills.';
+    if (score >= 40) return 'Fair match. Consider developing some key skills.';
+    return 'Limited match. Significant skill development needed.';
+}
+
 function showAddSkill() {
-    document.getElementById('addSkillModal').classList.remove('hidden');
+    document.getElementById('addSkillModal').classList.add('active');
+    document.getElementById('newSkill').focus();
 }
 
 function hideAddSkill() {
-    document.getElementById('addSkillModal').classList.add('hidden');
+    document.getElementById('addSkillModal').classList.remove('active');
 }
 
 function addSkill(event) {
@@ -194,16 +237,24 @@ function addSkill(event) {
         .then(response => response.json())
         .then(result => {
             if (result.status === 'success') {
+                showNotification('Skill added successfully!', 'success');
                 hideAddSkill();
                 location.reload();
             } else {
-                alert('Failed to add skill');
+                showNotification(result.error || 'Failed to add skill', 'error');
             }
         })
         .catch(error => {
-            alert('Error: ' + error.message);
+            showNotification('Error: ' + error.message, 'error');
         });
     }
 }
+
+// Close modals when clicking outside
+document.addEventListener('click', function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.classList.remove('active');
+    }
+});
 </script>
 {{end}}

@@ -1,99 +1,111 @@
 {{block "content" .}}
-<div class="p-6">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-        <div>
-            <h1 class="text-2xl font-bold">Application Tracker</h1>
-            <p class="text-gray-600">Manage your job applications</p>
-        </div>
-        <button class="btn btn-primary" onclick="showAddForm()">Add Application</button>
-    </div>
 
-    <!-- Stats -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div class="card text-center">
-            <div class="stat-value">{{.Stats.Applied}}</div>
-            <div class="stat-label">Applied</div>
-        </div>
-        <div class="card text-center">
-            <div class="stat-value">{{.Stats.Interviewing}}</div>
-            <div class="stat-label">Interviewing</div>
-        </div>
-        <div class="card text-center">
-            <div class="stat-value">{{.Stats.Offer}}</div>
-            <div class="stat-label">Offers</div>
-        </div>
-        <div class="card text-center">
-            <div class="stat-value">{{.Stats.Rejected}}</div>
-            <div class="stat-label">Rejected</div>
-        </div>
+<div class="page-header with-actions">
+    <div>
+        <h1>Application Tracker</h1>
+        <p class="subtitle">Manage your job applications</p>
     </div>
+    <button class="btn btn-primary" onclick="showAddForm()">Add Application</button>
+</div>
 
-    <!-- Applications Table -->
-    <div class="card">
-        <div class="overflow-x-auto">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Company</th>
-                        <th>Role</th>
-                        <th>Applied Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{range .Applications}}
-                    <tr>
-                        <td class="font-semibold">{{.Company}}</td>
-                        <td>{{.Role}}</td>
-                        <td>{{.AppliedDate}}</td>
-                        <td>
-                            <select class="form-select form-select-sm" onchange="updateStatus('{{.ID}}', this.value)">
-                                <option value="Applied" {{if eq .Status "Applied"}}selected{{end}}>Applied</option>
-                                <option value="Interviewing" {{if eq .Status "Interviewing"}}selected{{end}}>Interviewing</option>
-                                <option value="Offer" {{if eq .Status "Offer"}}selected{{end}}>Offer</option>
-                                <option value="Rejected" {{if eq .Status "Rejected"}}selected{{end}}>Rejected</option>
-                            </select>
-                        </td>
-                        <td>
-                            <div class="flex gap-2">
-                                <button class="btn btn-outline btn-sm" onclick="editApplication('{{.ID}}')">Edit</button>
-                                <button class="btn btn-outline btn-sm" onclick="deleteApplication('{{.ID}}')">Delete</button>
-                            </div>
-                        </td>
-                    </tr>
-                    {{else}}
-                    <tr>
-                        <td colspan="5" class="text-center py-8">
-                            <p class="text-gray-500">No applications yet.</p>
-                            <button class="btn btn-primary mt-2" onclick="showAddForm()">Add Your First Application</button>
-                        </td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
-        </div>
+<!-- Stats -->
+<div class="stats-grid compact">
+    <div class="stat-card">
+        <div class="stat-value">{{.Stats.Applied}}</div>
+        <div class="stat-label">Applied</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{.Stats.Interviewing}}</div>
+        <div class="stat-label">Interviewing</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{.Stats.Offer}}</div>
+        <div class="stat-label">Offers</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{.Stats.Rejected}}</div>
+        <div class="stat-label">Rejected</div>
+    </div>
+</div>
+
+<!-- Applications Table -->
+<div class="section">
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Company</th>
+                    <th>Role</th>
+                    <th>Applied Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Applications}}
+                <tr>
+                    <td class="company-cell">
+                        <strong>{{.Company}}</strong>
+                        {{if .HiringManager}}<br><small>{{.HiringManager}}</small>{{end}}
+                    </td>
+                    <td>{{.Role}}</td>
+                    <td>{{.AppliedDate}}</td>
+                    <td>
+                        <select class="status-select {{.Status | lower}}" 
+                                onchange="updateStatus('{{.ID}}', this.value)">
+                            <option value="Applied" {{if eq .Status "Applied"}}selected{{end}}>Applied</option>
+                            <option value="Interviewing" {{if eq .Status "Interviewing"}}selected{{end}}>Interviewing</option>
+                            <option value="Offer" {{if eq .Status "Offer"}}selected{{end}}>Offer</option>
+                            <option value="Rejected" {{if eq .Status "Rejected"}}selected{{end}}>Rejected</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn-icon" onclick="editApplication('{{.ID}}')" title="Edit">
+                                ✏️
+                            </button>
+                            <button class="btn-icon danger" onclick="deleteApplication('{{.ID}}')" title="Delete">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="5" class="empty-table">
+                        <div class="empty-state">
+                            <h3>No applications yet</h3>
+                            <p>Start tracking your job applications</p>
+                            <button class="btn btn-primary" onclick="showAddForm()">Add Your First Application</button>
+                        </div>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
     </div>
 </div>
 
 <!-- Add Application Modal -->
-<div id="addModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-lg max-w-md w-full">
-        <div class="p-6">
-            <h3 class="text-xl font-bold mb-4">Add Application</h3>
-            <form id="addForm" onsubmit="saveApplication(event)">
-                <div class="space-y-4">
+<div id="addModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add Application</h3>
+            <button class="modal-close" onclick="hideAddForm()">×</button>
+        </div>
+        <form id="addForm" onsubmit="saveApplication(event)">
+            <div class="modal-body">
+                <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label">Company</label>
+                        <label class="form-label">Company *</label>
                         <input type="text" class="form-input" name="company" required>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Role</label>
+                        <label class="form-label">Role *</label>
                         <input type="text" class="form-input" name="role" required>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Applied Date</label>
+                        <label class="form-label">Applied Date *</label>
                         <input type="date" class="form-input" name="applied_date" required>
                     </div>
                     <div class="form-group">
@@ -105,33 +117,44 @@
                             <option value="Rejected">Rejected</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group full-width">
+                        <label class="form-label">Hiring Manager</label>
+                        <input type="text" class="form-input" name="hiring_manager">
+                    </div>
+                    <div class="form-group full-width">
                         <label class="form-label">Notes</label>
-                        <textarea class="form-textarea" name="notes" rows="3"></textarea>
+                        <textarea class="form-textarea" name="notes" rows="3" placeholder="Any additional notes..."></textarea>
                     </div>
                 </div>
-                <div class="flex justify-end gap-2 mt-6">
-                    <button type="button" class="btn btn-outline" onclick="hideAddForm()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save</button>
-                </div>
-            </form>
-        </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="hideAddForm()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Application</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
 function showAddForm() {
-    document.getElementById('addModal').classList.remove('hidden');
+    const form = document.getElementById('addForm');
+    form.reset();
+    document.getElementById('addModal').classList.add('active');
 }
 
 function hideAddForm() {
-    document.getElementById('addModal').classList.add('hidden');
+    document.getElementById('addModal').classList.remove('active');
 }
 
 function saveApplication(event) {
     event.preventDefault();
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData);
+    
+    // Set default date if not provided
+    if (!data.applied_date) {
+        data.applied_date = new Date().toISOString().split('T')[0];
+    }
     
     fetch('/tracker/add', {
         method: 'POST',
@@ -143,14 +166,15 @@ function saveApplication(event) {
     .then(response => response.json())
     .then(result => {
         if (result.status === 'success') {
+            showNotification('Application added successfully!', 'success');
             hideAddForm();
-            location.reload();
+            setTimeout(() => location.reload(), 1000);
         } else {
-            alert('Failed to save application');
+            showNotification(result.error || 'Failed to save application', 'error');
         }
     })
     .catch(error => {
-        alert('Error: ' + error.message);
+        showNotification('Error: ' + error.message, 'error');
     });
 }
 
@@ -165,11 +189,15 @@ function updateStatus(appId, status) {
     .then(response => response.json())
     .then(result => {
         if (result.status !== 'success') {
-            alert('Failed to update status');
+            showNotification('Failed to update status', 'error');
+            location.reload(); // Reload to reset to correct state
+        } else {
+            showNotification('Status updated successfully!', 'success');
         }
     })
     .catch(error => {
-        alert('Error: ' + error.message);
+        showNotification('Error: ' + error.message, 'error');
+        location.reload();
     });
 }
 
@@ -181,15 +209,29 @@ function deleteApplication(appId) {
         .then(response => response.json())
         .then(result => {
             if (result.status === 'success') {
+                showNotification('Application deleted successfully!', 'success');
                 location.reload();
             } else {
-                alert('Failed to delete application');
+                showNotification('Failed to delete application', 'error');
             }
         })
         .catch(error => {
-            alert('Error: ' + error.message);
+            showNotification('Error: ' + error.message, 'error');
         });
     }
 }
+
+function editApplication(appId) {
+    // For now, just show a message - you can implement full edit functionality later
+    showNotification('Edit functionality coming soon!', 'info');
+}
+
+// Set default date to today
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.querySelector('input[name="applied_date"]');
+    if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+});
 </script>
 {{end}}

@@ -1,0 +1,124 @@
+{{ block "content" .}}
+
+<div class="job-detail-page">
+    <div class="job-detail-header">
+        <div class="job-title-section">
+            <h1>{{.Job.Title}}</h1>
+            <p class="company-name">{{.Job.Company}}</p>
+            <div class="job-meta">
+                <span class="location">{{.Job.Location}}</span>
+                <span class="source">{{.Job.Source}}</span>
+                <span class="date">Posted: {{.Job.PostedDate}}</span>
+                {{if .Job.Experience}}<span class="experience">{{.Job.Experience}}</span>{{end}}
+            </div>
+        </div>
+        
+        <div class="job-actions-sidebar">
+            <div class="score-display {{if gt .Job.Score 80}}high{{else if gt .Job.Score 60}}medium{{else}}low{{end}}">
+                <div class="score-value">{{.Job.Score}}%</div>
+                <div class="score-label">Match Score</div>
+            </div>
+            
+            <div class="action-buttons-vertical">
+                <button class="btn btn-primary full-width" 
+                        onclick="applyForJob('{{.Job.ID}}', '{{.Job.Title}}', '{{.Job.Company}}')">
+                    Apply Now
+                </button>
+                <button class="btn btn-outline full-width" 
+                        onclick="analyzeJob('{{.Job.ID}}', '{{.Job.Title}}', '{{.Job.Company}}', `{{.Job.Description}}`)">
+                    Analyze Fit
+                </button>
+                {{if .Job.URL}}
+                <a href="{{.Job.URL}}" target="_blank" class="btn btn-outline full-width">
+                    View Original Posting
+                </a>
+                {{end}}
+                {{if .Job.SalaryRange}}
+                <div class="salary-info">
+                    <strong>Salary:</strong> {{.Job.SalaryRange}}
+                </div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+
+    <div class="job-detail-content">
+        <div class="content-section">
+            <h3>Job Description</h3>
+            <div class="description-content">
+                {{if .Job.Description}}
+                <pre>{{.Job.Description}}</pre>
+                {{else}}
+                <p class="no-description">No detailed description available.</p>
+                {{end}}
+            </div>
+        </div>
+
+        {{if .Job.Skills}}
+        <div class="content-section">
+            <h3>Required Skills</h3>
+            <div class="skills-container">
+                {{range .Job.Skills}}
+                <span class="skill-tag large">{{.}}</span>
+                {{end}}
+            </div>
+        </div>
+        {{end}}
+
+        {{if .Job.TechStack}}
+        <div class="content-section">
+            <h3>Technology Stack</h3>
+            <div class="tech-container">
+                {{range .Job.TechStack}}
+                <span class="tech-tag">{{.}}</span>
+                {{end}}
+            </div>
+        </div>
+        {{end}}
+    </div>
+</div>
+
+<script>
+function applyForJob(jobId, title, company) {
+    if (confirm(`Apply for "${title}" at ${company}?`)) {
+        fetch(`/jobs/${jobId}/apply`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                applied_date: new Date().toISOString().split('T')[0],
+                notes: `Applied for ${title} at ${company}`
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            showNotification(data.message, 'success');
+        })
+        .catch(error => {
+            showNotification('Application failed: ' + error.message, 'error');
+        });
+    }
+}
+
+function analyzeJob(jobId, title, company, description) {
+    fetch('/analyze-skills', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            job_description: description
+        })
+    })
+    .then(response => response.json())
+    .then(analysis => {
+        // Show analysis in a modal or redirect to analyzer
+        showNotification(`Fit analysis: ${analysis.fit_score}% match`, 'info');
+    })
+    .catch(error => {
+        showNotification('Analysis failed: ' + error.message, 'error');
+    });
+}
+</script>
+{{end}}
