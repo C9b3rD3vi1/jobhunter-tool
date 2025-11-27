@@ -150,7 +150,7 @@ jobhunter-tool/
 
 
 ## Usage Guide
-Dashboard (/)
+### Dashboard (/)
 
 ![Screenshot](./static/images/dashboard.png)
 
@@ -161,7 +161,7 @@ Quick Actions: One-click scraping, analysis, tracking
 High-Probability Opportunities: Top-scoring jobs based on your skills
 
 
-Job Board (/jobs)
+### Job Board (/jobs)
 
 Smart Filtering: Filter by score, skills, company, location
 
@@ -170,14 +170,15 @@ Quick Actions: Apply, analyze, view original postings
 Real-time Scoring with color coding
 
 
-Application Tracker (/tracker)
+
+### Application Tracker (/tracker)
 
 Status Tracking: Applied, Interviewing, Offer, Rejected
 
 CRM Features: Add notes, hiring manager contacts, follow-up dates
 
 
-Skills Analyzer (/analyzer)
+### Skills Analyzer (/analyzer)
 
 Skills Gap Analysis
 
@@ -186,7 +187,7 @@ AI Recommendations
 Transferable Skills highlighting
 
 
-Company Pages (/company/:name)
+### Company Pages (/company/:name)
 
 Company-focused view for all opportunities
 
