@@ -9,11 +9,13 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sashabaranov/go-openai v1.41.2
+	gorm.io/datatypes v1.2.7
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.1
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/PuerkitoBio/goquery v1.11.0 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
@@ -21,6 +23,7 @@ require (
 	github.com/antchfx/xmlquery v1.4.4 // indirect
 	github.com/antchfx/xpath v1.3.3 // indirect
 	github.com/bits-and-blooms/bitset v1.22.0 // indirect
+	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
@@ -46,4 +49,5 @@ require (
 	golang.org/x/text v0.31.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
+	gorm.io/driver/mysql v1.5.6 // indirect
 )

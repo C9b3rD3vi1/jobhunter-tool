@@ -1,15 +1,18 @@
 package database
 
 import (
-	"errors"
-	"fmt"
-	"log"
-	"time"
 
+    "fmt"
+    "log"
+    "time"
+
+    "gorm.io/driver/sqlite"
+    "gorm.io/gorm"
+    "gorm.io/gorm/clause" // <-- needed for OnConflict
+    "gorm.io/gorm/logger"
+    "gorm.io/datatypes"
+    
 	"github.com/C9b3rD3vi1/jobhunter-tool/models"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 type DB struct {
@@ -19,7 +22,7 @@ type DB struct {
 func InitDB() (*DB, error) {
     // Connect to SQLite database
     db, err := gorm.Open(sqlite.Open("jobhunter.db"), &gorm.Config{
-        Logger: logger.Default.LogMode(logger.Info),
+        Logger: logger.Default.LogMode(logger.Silent), // Reduce log noise
     })
     if err != nil {
         return nil, fmt.Errorf("failed to connect to database: %v", err)
@@ -37,11 +40,11 @@ func InitDB() (*DB, error) {
 
     // Create default skills
     defaultSkills := []string{
-        "AWS", "Python", "Go", "Fortinet", "SIEM", "Docker",
-        "Kubernetes", "Terraform", "JavaScript", "Cybersecurity",
+        "AWS", "Python", "Go", "Fortinet", "SIEM", "Docker", 
+        "Kubernetes", "Terraform", "JavaScript", "Cybersecurity", 
         "Cloud Security", "SOC", "Network Security",
     }
-
+    
     for _, skill := range defaultSkills {
         userSkill := models.UserSkill{Skill: skill, Category: "Technical"}
         result := db.FirstOrCreate(&userSkill, models.UserSkill{Skill: skill})
@@ -55,39 +58,44 @@ func InitDB() (*DB, error) {
 }
 
 func (db *DB) SaveJob(job *models.Job) error {
+    // Generate ID if not provided
     if job.ID == "" {
         job.ID = fmt.Sprintf("%d", time.Now().UnixNano())
     }
 
-    var existing models.Job
-    err := db.Where("url = ?", job.URL).First(&existing).Error
-
-    if errors.Is(err, gorm.ErrRecordNotFound) {
-        // Create new record
-        return db.Create(job).Error
+    // Ensure Skills and TechStack are properly formatted JSON
+    if job.Skills == nil {
+        job.Skills = datatypes.JSON([]byte(`[]`))
+    }
+    if job.TechStack == nil {
+        job.TechStack = datatypes.JSON([]byte(`[]`))
     }
 
-    if err != nil {
-        return err
-    }
+    // Use GORM's Create with conflict handling
+    result := db.Clauses(
+        clause.OnConflict{
+            Columns:   []clause.Column{{Name: "url"}},
+            DoUpdates: clause.Assignments(map[string]interface{}{
+                "title":        job.Title,
+                "company":      job.Company,
+                "location":     job.Location,
+                "description":  job.Description,
+                "salary_range": job.SalaryRange,
+                "experience":   job.Experience,
+                "posted_date":  job.PostedDate,
+                "source":       job.Source,
+                "score":        job.Score,
+                "skills":       job.Skills,
+                "tech_stack":   job.TechStack,
+            }),
+        },
+    ).Create(job)
 
-    // Update record
-    return db.Model(&existing).Updates(map[string]interface{}{
-        "title":        job.Title,
-        "company":      job.Company,
-        "location":     job.Location,
-        "description":  job.Description,
-        "salary_range": job.SalaryRange,
-        "experience":   job.Experience,
-        "posted_date":  job.PostedDate,
-        "source":       job.Source,
-        "score":        job.Score,
-        "skills":       job.Skills,
-        "tech_stack":   job.TechStack,
-    }).Error
+    if result.Error != nil {
+        log.Printf("Error saving job %s: %v", job.Title, result.Error)
+    }
+    return result.Error
 }
-
-
 
 func (db *DB) GetJobs(limit, offset int) ([]models.Job, error) {
     var jobs []models.Job
@@ -95,8 +103,22 @@ func (db *DB) GetJobs(limit, offset int) ([]models.Job, error) {
         Limit(limit).
         Offset(offset).
         Find(&jobs)
+    
+    if result.Error != nil {
+        return nil, result.Error
+    }
 
-    return jobs, result.Error
+    // Convert JSON fields to proper slices for templates
+    for i := range jobs {
+        if jobs[i].Skills == nil {
+            jobs[i].Skills = datatypes.JSON([]byte(`[]`))
+        }
+        if jobs[i].TechStack == nil {
+            jobs[i].TechStack = datatypes.JSON([]byte(`[]`))
+        }
+    }
+    
+    return jobs, nil
 }
 
 func (db *DB) GetJobByID(id string) (*models.Job, error) {
@@ -112,7 +134,7 @@ func (db *DB) SaveApplication(app *models.Application) error {
     if app.ID == "" {
         app.ID = fmt.Sprintf("%d", time.Now().UnixNano())
     }
-
+    
     result := db.Create(app)
     return result.Error
 }
@@ -139,7 +161,7 @@ func (db *DB) GetUserSkills() ([]string, error) {
     for i, userSkill := range userSkills {
         skills[i] = userSkill.Skill
     }
-
+    
     return skills, nil
 }
 
@@ -167,32 +189,10 @@ func (db *DB) GetJobStats() (totalJobs, highScoreJobs int, err error) {
     return totalJobs, highScoreJobs, nil
 }
 
-func (db *DB) SearchJobs(title, company string, minScore int) ([]models.Job, error) {
-    var jobs []models.Job
-    query := db.Model(&models.Job{})
-
-    if title != "" {
-        query = query.Where("title LIKE ?", "%"+title+"%")
-    }
-
-    if company != "" {
-        query = query.Where("company LIKE ?", "%"+company+"%")
-    }
-
-    if minScore > 0 {
-        query = query.Where("score >= ?", minScore)
-    }
-
-    result := query.Order("score DESC").Find(&jobs)
-    return jobs, result.Error
-}
-
-func (db *DB) GetJobsByCompany(company string) ([]models.Job, error) {
-    var jobs []models.Job
-    result := db.Where("company LIKE ?", "%"+company+"%").
-        Order("score DESC").
-        Find(&jobs)
-    return jobs, result.Error
+func (db *DB) GetApplicationStats() (int, error) {
+    var count int64
+    result := db.Model(&models.Application{}).Count(&count)
+    return int(count), result.Error
 }
 
 func (db *DB) Close() error {

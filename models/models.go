@@ -2,23 +2,25 @@ package models
 
 import (
     "time"
+    //"gorm.io/gorm"
+    "gorm.io/datatypes"
 )
 
 type Job struct {
-    ID          string    `gorm:"primaryKey" json:"id"`
-    Title       string    `gorm:"not null" json:"title"`
-    Company     string    `gorm:"not null" json:"company"`
-    Location    string    `json:"location"`
-    Description string    `json:"description"`
-    SalaryRange string    `json:"salary_range"`
-    Experience  string    `json:"experience"`
-    PostedDate  string    `json:"posted_date"`
-    Source      string    `json:"source"`
-    URL         string    `gorm:"unique" json:"url"`
-    Score       int       `gorm:"default:0" json:"score"`
-    Skills      []string  `gorm:"serializer:json" json:"skills"`
-    TechStack   []string  `gorm:"serializer:json" json:"tech_stack"`
-    CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
+    ID          string         `gorm:"primaryKey" json:"id"`
+    Title       string         `gorm:"not null" json:"title"`
+    Company     string         `gorm:"not null" json:"company"`
+    Location    string         `json:"location"`
+    Description string         `json:"description"`
+    SalaryRange string         `json:"salary_range"`
+    Experience  string         `json:"experience"`
+    PostedDate  string         `json:"posted_date"`
+    Source      string         `json:"source"`
+    URL         string         `gorm:"unique" json:"url"`
+    Score       int            `gorm:"default:0" json:"score"`
+    Skills      datatypes.JSON `gorm:"type:json" json:"skills"`
+    TechStack   datatypes.JSON `gorm:"type:json" json:"tech_stack"`
+    CreatedAt   time.Time      `gorm:"autoCreateTime" json:"created_at"`
 }
 
 type Application struct {

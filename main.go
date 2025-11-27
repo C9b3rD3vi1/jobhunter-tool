@@ -17,6 +17,10 @@ import (
 	"github.com/C9b3rD3vi1/jobhunter-tool/ai"
 )
 
+var (
+    db        *database.DB
+    jobScraper *scraper.RealScraper
+)
 
 func main() {
     // Load environment variables
@@ -24,22 +28,22 @@ func main() {
         log.Println("No .env file found, using default values")
     }
 
-    // Initialize database with GORM
-    db, err := database.InitDB()
+    // Initialize database
+    var err error
+    db, err = database.InitDB()
     if err != nil {
         log.Fatal("Failed to initialize database:", err)
     }
     defer db.Close()
 
-    // Initialize scraper
-    jobScraper := scraper.NewRealScraper(db)
+    // Initialize scraper with the same DB instance
+    jobScraper = scraper.NewRealScraper(db)
 
     // Initialize AI
     aiGenerator := ai.NewAIGenerator(os.Getenv("OPENAI_API_KEY"))
 
     // Initialize template engine
     engine := html.New("./templates", ".html")
-    
     engine.Layout("layouts/base")
     
     app := fiber.New(fiber.Config{
@@ -49,7 +53,6 @@ func main() {
     // Middleware
     app.Use(logger.New())
     app.Static("/static", "./static")
-    
 
     // Inject dependencies
     app.Use(func(c *fiber.Ctx) error {
@@ -63,7 +66,7 @@ func main() {
     setupRoutes(app)
 
     // Start background scraping cron job
-    startBackgroundScraping(jobScraper)
+    startBackgroundScraping()
 
     log.Println("🚀 JobHunter AI started on http://localhost:3000")
     log.Fatal(app.Listen(":3000"))
@@ -84,27 +87,28 @@ func setupRoutes(app *fiber.App) {
     
     // API routes
     //app.Get("/api/jobs", handlers.APIJobsHandler)
-    //app.Get("/api/stats", handlers.APIStatsHandler)
+   // app.Get("/api/stats", handlers.APIStatsHandler)
+    app.Post("/skills/add", handlers.AddSkillHandler)
 }
 
-func startBackgroundScraping(scraper *scraper.RealScraper) {
+func startBackgroundScraping() {
     c := cron.New()
     
     // Scrape every 6 hours
     c.AddFunc("0 */6 * * *", func() {
         log.Println("🔄 Starting scheduled job scraping...")
-        if err := scraper.ScrapeAllSources(); err != nil {
+        if err := jobScraper.ScrapeAllSources(); err != nil {
             log.Printf("❌ Scheduled scraping failed: %v", err)
         } else {
             log.Println("✅ Scheduled scraping completed successfully")
         }
     })
     
-    // Scrape immediately on startup
+    // Scrape immediately on startup (but don't wait)
     go func() {
-        time.Sleep(10 * time.Second) // Wait for server to start
+        time.Sleep(5 * time.Second) // Shorter wait
         log.Println("🔄 Starting initial job scraping...")
-        if err := scraper.ScrapeAllSources(); err != nil {
+        if err := jobScraper.ScrapeAllSources(); err != nil {
             log.Printf("❌ Initial scraping failed: %v", err)
         }
     }()
