@@ -1,20 +1,21 @@
 package main
 
 import (
-    "log"
-    "os"
-    "time"
-    
-    "github.com/gofiber/fiber/v2"
-    "github.com/gofiber/fiber/v2/middleware/logger"
-    "github.com/gofiber/template/html/v2"
-    "github.com/joho/godotenv"
-    "github.com/robfig/cron/v3"
-    
-    "github.com/C9b3rD3vi1/jobhunter-tool/handlers"
-    "github.com/C9b3rD3vi1/jobhunter-tool/models"
-    "github.com/C9b3rD3vi1/jobhunter-tool/scraper"
+	"log"
+	"os"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/template/html/v2"
+	"github.com/joho/godotenv"
+	"github.com/robfig/cron/v3"
+
+	"github.com/C9b3rD3vi1/jobhunter-tool/database"
+	"github.com/C9b3rD3vi1/jobhunter-tool/handlers"
+	"github.com/C9b3rD3vi1/jobhunter-tool/scraper"
 )
+
 
 func main() {
     // Load environment variables
@@ -22,7 +23,7 @@ func main() {
         log.Println("No .env file found, using default values")
     }
 
-    // Initialize database
+    // Initialize database with GORM
     db, err := models.InitDB()
     if err != nil {
         log.Fatal("Failed to initialize database:", err)
@@ -60,6 +61,7 @@ func main() {
     // Start background scraping cron job
     startBackgroundScraping(jobScraper)
 
+    log.Println("🚀 JobHunter AI started on http://localhost:3000")
     log.Fatal(app.Listen(":3000"))
 }
 
@@ -75,6 +77,10 @@ func setupRoutes(app *fiber.App) {
     app.Post("/analyze-skills", handlers.AnalyzeSkillsHandler)
     app.Get("/company/:name", handlers.CompanyHandler)
     app.Post("/cover-letter", handlers.GenerateCoverLetterHandler)
+    
+    // API routes
+    app.Get("/api/jobs", handlers.APIJobsHandler)
+    app.Get("/api/stats", handlers.APIStatsHandler)
 }
 
 func startBackgroundScraping(scraper *scraper.RealScraper) {
@@ -82,20 +88,20 @@ func startBackgroundScraping(scraper *scraper.RealScraper) {
     
     // Scrape every 6 hours
     c.AddFunc("0 */6 * * *", func() {
-        log.Println("Starting scheduled job scraping...")
+        log.Println("🔄 Starting scheduled job scraping...")
         if err := scraper.ScrapeAllSources(); err != nil {
-            log.Printf("Scheduled scraping failed: %v", err)
+            log.Printf("❌ Scheduled scraping failed: %v", err)
         } else {
-            log.Println("Scheduled scraping completed successfully")
+            log.Println("✅ Scheduled scraping completed successfully")
         }
     })
     
     // Scrape immediately on startup
     go func() {
         time.Sleep(10 * time.Second) // Wait for server to start
-        log.Println("Starting initial job scraping...")
+        log.Println("🔄 Starting initial job scraping...")
         if err := scraper.ScrapeAllSources(); err != nil {
-            log.Printf("Initial scraping failed: %v", err)
+            log.Printf("❌ Initial scraping failed: %v", err)
         }
     }()
     
