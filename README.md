@@ -63,47 +63,45 @@ Manually searching for jobs on multiple platforms (LinkedIn, BrighterMonday, com
 
 ### Quick Start
 
-## Clone the repository
+### Clone the repository
 
 		git clone https://github.com/C9b3rD3vi1/jobhunter-tool.git
 		cd jobhunter-tool
 
-## Install dependencies
+### Install dependencies
 		go mod download
 		go mod tidy
 
-## Set up environment variables
+### Set up environment variables
 
 		cp .env.example .env
 
-## Edit .env with your configuration
-
-## Run the application
+#### Run the application
 
 		go run main.go
 
-## Access the application:
+### Access the application:
 
 **Open http://localhost:3000 in your browser.**
 
-## Environment Configuration
+### Environment Configuration
 
 ***Create a .env file in the root directory:***
 
-## Server Configuration
+### Server Configuration
 
 		PORT=3000
 		ENVIRONMENT=development
 
-## OpenAI API (Optional - for AI features)
+### OpenAI API (Optional - for AI features)
 
 		OPENAI_API_KEY=your_openai_api_key_here
 
-## Database Configuration
+### Database Configuration
 
 		DATABASE_PATH=./jobhunter.db
 
-## Scraping Configuration
+### Scraping Configuration
 
 		SCRAPING_DELAY=4
 		SCRAPING_TIMEOUT=30
@@ -194,34 +192,35 @@ Company-focused view for all opportunities
 Consistent scoring
 
 
-## Quick comparison within the same company
+### Quick comparison within the same company
 
 ### API Endpoints
 
 ***Job Management***
-
+```text
 Method  	Endpoint	    Description
 GET	     /api/jobs	        Get jobs with pagination
 GET	    /api/stats	        Get system statistics
 GET	    /jobs/scrape	    Start job scraping
 POST	/jobs/:id/apply	    Track job application
-
+```
 
 Skills & Analysis
+```text
 Method	Endpoint	     Description
 POST	/analyze-skills	 Analyze job description fit
 POST	/cover-letter	 Generate AI cover letter
 POST	/skills/add	     Add user skill
-
+```
 
 
 Application Tracking
-
+```text
 Method	Endpoint	            Description
 POST	/tracker/add	        Add manual application
 PUT	    /tracker/:id/status	    Update application status
 DELETE	/tracker/:id	        Delete application
-
+```
 
 ## AI Integration
 Cover Letter Generation
@@ -261,7 +260,7 @@ Fuzu Kenya
 
 Company Career Pages: Safaricom, KCB Bank, Equity Bank
 
-Scraping Features
+#### Scraping Features
 
 Respectful crawling with delays and rate limiting
 
@@ -341,7 +340,8 @@ go build -o jobhunter-tool main.go
 				
 ### Production Considerations:
 
-Set ENVIRONMENT=production in .env
+
+Set **ENVIRONMENT=production** in .env
 
 Use nginx for SSL termination
 
@@ -371,13 +371,14 @@ Database issues: Permissions, path, SQLite3 installed
 
 AI issues: OpenAI API key, quota, logs
 
-## Logs:
+
+### Logs:
 
 ```bash
 tail -f jobhunter.log
 ```
 
-## Contributing
+### Contributing
 
 Fork the repository
 
@@ -388,7 +389,7 @@ Make changes & add tests
 Submit a pull request
 
 
-## Code Style:
+### Code Style:
 
 Follow Go standard formatting
 
@@ -397,12 +398,12 @@ Descriptive variable names
 Include comments for complex logic
 
 
-## 📄 License
+### 📄 License
 
 MIT License - see the LICENSE file for details.
 
 
-##  Acknowledgments
+### Acknowledgments
 
 Fiber - Fast Go framework
 
@@ -415,7 +416,7 @@ OpenAI - AI capabilities
 TailwindCSS - CSS framework
 
 
-## 📞 Support
+### 📞 Support
 
 Documentation: GitHub Wiki
 
